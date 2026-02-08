@@ -1,0 +1,82 @@
+aviator-purple-bot/
+│
+├── index.js
+├── config.js
+├── strategy.js
+├── package.json
+└── README.m{
+  "name": "aviator-purple-bot",
+  "version": "1.0.0",
+  "description": "Aviator purple-only auto strategy bot",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "puppeteer": "^21.6.0"
+  }
+}module.exports = {
+  betAmount: 1,
+  cashOutAt: 2.00, // PURPLE
+  maxLosses: 3,
+  waitAfterLoss: 2
+};const config = require("./config");
+
+let losses = 0;
+
+function shouldBet(lastMultiplier) {
+  if (losses >= config.maxLosses) {
+    console.log("Cooling down...");
+    return false;
+  }
+
+  return lastMultiplier >= 2;
+}
+
+function recordResult(win) {
+  if (win) {
+    losses = 0;
+  } else {
+    losses++;
+  }
+}
+
+module.exports = {
+  shouldBet,
+  recordResult
+};const puppeteer = require("puppeteer");
+const strategy = require("./strategy");
+const config = require("./config");
+
+(async () => {
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+
+  await page.goto("https://your-aviator-site.com", {
+    waitUntil: "networkidle2"
+  });
+
+  console.log("Bot started - PURPLES ONLY");
+
+  while (true) {
+    // ⚠️ This is where site-specific selectors go
+    const lastMultiplier = await page.evaluate(() => {
+      const el = document.querySelector(".last-multiplier");
+      return el ? parseFloat(el.innerText) : 0;
+    });
+
+    if (strategy.shouldBet(lastMultiplier)) {
+      console.log("Betting for purple...");
+
+      // Place bet (example)
+      // await page.click("#bet-button");
+
+      // Auto cashout at purple
+      // await page.waitForSelector(`#cashout-${config.cashOutAt}`);
+
+      strategy.recordResult(true);
+    }
+
+    await new Promise(r => setTimeout(r, 5000));
+  }
+})();d
